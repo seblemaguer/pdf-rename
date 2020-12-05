@@ -132,8 +132,8 @@ if __name__ == '__main__':
                             help="increase output verbosity")
 
         # Add arguments
-        parser.add_argument("input", help="input pdf file to be renamed")
-        parser.add_argument("output_dir", help="Output directory")
+        parser.add_argument("input", help="pdf file or directory containing the pdf files to be renamed")
+        parser.add_argument("output_dir", help="Output directory which will contain the renamed files")
 
         # Parsing arguments
         args = parser.parse_args()
