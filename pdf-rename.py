@@ -109,7 +109,7 @@ def main():
         except Exception as ex:
             if args.failed_dir is not None:
                 os.makedirs(args.failed_dir, exist_ok=True)
-                shutil.copyfile(cur_pdf, "%s/%s" % (args.failed_dir, os.path.basename(cur_pdf)))
+                shutil.move(cur_pdf, "%s/%s" % (args.failed_dir, os.path.basename(cur_pdf)))
             logger.error("Ignored as cannot rename \"%s\": %s" % (cur_pdf, ex))
             logger.error(str(ex))
             traceback.print_exc(file=sys.stderr)
