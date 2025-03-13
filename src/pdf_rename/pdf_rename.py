@@ -106,6 +106,7 @@ def main():
 
             os.makedirs(args.output_dir, exist_ok=True)
             shutil.move(cur_pdf, "%s/%s" % (args.output_dir, final_name))
+            logger.info(f"{cur_pdf} renamed to {args.output_dir}/{final_name}")
         except Exception as ex:
             if args.failed_dir is not None:
                 os.makedirs(args.failed_dir, exist_ok=True)
