@@ -25,14 +25,17 @@ classifiers = [
 
 dependencies=[
    "papers-cli==2.4",
+   "pymupdf"
 ]
 
 [project.optional-dependencies]
 dev = [
   "pre-commit",
   "block",
-  "flake8"
+  "flake8",
+  "basedpyright"
 ]
+
 [tool.black]
 line-length = 120
 target-version = ['py38', 'py39', 'py310', 'py311']
@@ -50,3 +53,6 @@ exclude = '''
 
 [tool.flake8]
 max-line-length = 120
+
+[tool.basedpyright]
+typeCheckingMode = "standard"
