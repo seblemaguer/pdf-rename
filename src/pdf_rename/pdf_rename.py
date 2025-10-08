@@ -143,12 +143,15 @@ def first_names(author):
     return [nm.split(",")[1].strip() for nm in authors]
 
 
-def extract_doi_from_pdf(pdf_path):
+def extract_doi_from_pdf(pdf_path: pathlib.Path):
     """Extracts DOI from the PDF's metadata or text."""
     doc = pymupdf.open(pdf_path)
 
     # First try to find DOI in metadata (if available)
     metadata = doc.metadata
+    if (metadata is None) or (not isinstance(metadata, dict)):
+        return None
+
     if "doi" in metadata:
         return metadata["doi"]
 
