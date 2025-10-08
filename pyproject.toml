@@ -5,7 +5,7 @@ requires = [
 ]
 
 [project]
-name = "PDFRenammer"
+name = "pdf_rename"
 version = "0.1"
 description="Helper to rename some files PDF file using their metadata"
 authors = [
@@ -22,7 +22,6 @@ classifiers = [
   'Programming Language :: Python :: 3',
   'Programming Language :: Python :: 3.10',
 ]
-
 dependencies=[
    "papers-cli==2.4",
    "pymupdf"
@@ -31,10 +30,13 @@ dependencies=[
 [project.optional-dependencies]
 dev = [
   "pre-commit",
-  "block",
   "flake8",
-  "basedpyright"
+  "basedpyright",
+  "black"
 ]
+
+[project.scripts]
+pdf_rename="pdf_rename.pdf_rename:main"
 
 [tool.black]
 line-length = 120

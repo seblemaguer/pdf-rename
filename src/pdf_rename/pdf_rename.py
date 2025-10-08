@@ -16,6 +16,7 @@ LICENSE
 import sys
 import os
 import re
+import pathlib
 
 # Arguments
 import argparse
@@ -27,7 +28,6 @@ from logging.config import dictConfig
 
 # Shell
 import shutil
-import glob
 
 # Papers
 import requests
@@ -43,6 +43,7 @@ import bibtexparser
 ###############################################################################
 LEVEL = [logging.INFO, logging.DEBUG]
 DOI_REGEXP = r"/^10\.\d{4,9}\/[-._;()/:A-Z0-9]+$/i"
+
 
 ###############################################################################
 # Functions
@@ -125,19 +126,7 @@ def define_argument_parser() -> argparse.ArgumentParser:
         help="increase output verbosity",
     )
 
-    # Add options
-    parser.add_argument(
-        "-f",
-        "--failed-dir",
-        type=str,
-        default=None,
-        help="Directory to store all the files which have been failed to be renamed",
-    )
-    parser.add_argument("-r", "--recursive", action="store_true", help="recursive list all pdf!")
-
-    # Add arguments
-    parser.add_argument("input", help="pdf file or directory containing the pdf files to be renamed")
-    parser.add_argument("output_dir", help="Output directory which will contain the renamed files")
+    parser.add_argument("input_pdf", help="The input PDF file to rename")
 
     # Return parser
     return parser
@@ -193,10 +182,10 @@ def get_metadata_from_crossref(doi):
         return None
 
 
-def get_metadata_from_google_scholar(pdf_path):
+def get_metadata_from_google_scholar(pdf_path: pathlib.Path):
     # If no information, try to extract some additional part
     bibtex = extract_pdf_metadata(
-        pdf_path, search_doi=False, search_fulltext=True, scholar=False, minwords=200, max_query_words=200
+        str(pdf_path.resolve()), search_doi=False, search_fulltext=True, scholar=False, minwords=200, max_query_words=200
     )
 
     bib = bibtexparser.loads(bibtex)
@@ -216,68 +205,46 @@ def get_metadata_from_google_scholar(pdf_path):
 
     return entry["year"], fir_names[0][0].capitalize(), fam_names[0].capitalize(), entry["title"]
 
-
 ###############################################################################
-#  Envelopping
+#  Entry point
 ###############################################################################
-if __name__ == "__main__":
+def main():
     # Initialization
     arg_parser = define_argument_parser()
     args = arg_parser.parse_args()
     logger = configure_logger(args)
 
-    # TODO: your code comes here
+    input_pdf = pathlib.Path(args.input_pdf)
+    output_dir = input_pdf.parent
 
-    pdfs = []
-    if args.input.endswith(".pdf"):
-        pdfs = [args.input]
-    elif not args.recursive:
-        pdfs = [f for f in glob.glob("%s/*.pdf" % args.input)]
-    else:
-        pdfs = []
-        for dirpath, dirnames, filenames in os.walk(args.input):
-            for name in filenames:
-                if name.endswith(".pdf"):
-                    pdfs.append("%s/%s" % (dirpath, name))
+    doi = extract_doi_from_pdf(input_pdf)
+    year, first_initial, last_name, title = (None, None, None, None)
+    if doi is not None:
+        logger.debug(f"We found a doi: {doi}, let's try crossref")
+        metadata = get_metadata_from_crossref(doi)
+        if metadata is not None:
+            year, first_initial, last_name, title = metadata
+            logger.debug(f"crossref do provide some metadata: {metadata}")
 
-    for cur_pdf in pdfs:
-        logger.info("# ======================================================================")
-        logger.info("# Renaming %s..." % cur_pdf)
-        logger.info("# ======================================================================")
-        try:
+    # We
+    if year is None:
+        logger.debug(f"Nothing worked up to now, let's try google scholar")
+        metadata = get_metadata_from_google_scholar(input_pdf)
+        if metadata is not None:
+            year, first_initial, last_name, title = metadata
+            logger.debug(f"google scholar do provide some metadata: {metadata}")
 
-            doi = extract_doi_from_pdf(cur_pdf)
-            year, first_initial, last_name, title = (None, None, None, None)
-            if doi is not None:
-                logger.debug(f"We found a doi: {doi}, let's try crossref")
-                metadata = get_metadata_from_crossref(doi)
-                if metadata is not None:
-                    year, first_initial, last_name, title = metadata
-                    logger.debug(f"crossref do provide some metadata: {metadata}")
+    if year is None:
+        logger.error(f"Didn't find anything, {input_pdf} is not renamed")
+        sys.exit(-1)
 
-            # We
-            if year is None:
-                logger.debug(f"Nothing worked up to now, let's try google scholar")
-                metadata = get_metadata_from_google_scholar(cur_pdf)
-                if metadata is not None:
-                    year, first_initial, last_name, title = metadata
-                    logger.debug(f"google scholar do provide some metadata: {metadata}")
+    final_name = "%s - %s. %s - %s.pdf" % (year, first_initial, last_name, title)
 
-            if year is None:
-                logger.warning(f"Didn't find anything, {cur_pdf} is not renamed and moved to failed if failed dir provided")
-                if args.failed_dir is not None:
-                    os.makedirs(args.failed_dir, exist_ok=True)
-                    shutil.move(cur_pdf, "%s/%s" % (args.failed_dir, os.path.basename(cur_pdf)))
-                continue
-            final_name = "%s - %s. %s - %s.pdf" % (year, first_initial, last_name, title)
+    shutil.move(input_pdf, output_dir / final_name)
+    logger.info(f"{input_pdf} renamed to {output_dir}/{final_name}")
 
-            os.makedirs(args.output_dir, exist_ok=True)
-            shutil.move(cur_pdf, "%s/%s" % (args.output_dir, final_name))
-            logger.info(f"{cur_pdf} renamed to {args.output_dir}/{final_name}")
-        except Exception as ex:
-            if args.failed_dir is not None:
-                os.makedirs(args.failed_dir, exist_ok=True)
-                shutil.move(cur_pdf, "%s/%s" % (args.failed_dir, os.path.basename(cur_pdf)))
-            logger.error('Ignored as cannot rename "%s": %s' % (cur_pdf, ex))
-            logger.error(str(ex))
-            traceback.print_exc(file=sys.stderr)
+###############################################################################
+#  Envelopping
+###############################################################################
+if __name__ == "__main__":
+    main()
