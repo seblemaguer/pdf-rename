@@ -126,6 +126,10 @@ def define_argument_parser() -> argparse.ArgumentParser:
         help="increase output verbosity",
     )
 
+    # Add overriding options
+    parser.add_argument("-d", "--doi", default=None, type=str, help="Override the DOI")
+
+    # Add arguments
     parser.add_argument("input_pdf", help="The input PDF file to rename")
 
     # Return parser
@@ -164,7 +168,7 @@ def extract_doi_from_pdf(pdf_path: pathlib.Path):
     return None
 
 
-def get_metadata_from_crossref(doi):
+def get_metadata_from_crossref(doi) -> tuple[str, str, str, str] | None:
     """Fetches metadata from CrossRef API using DOI."""
     url = f"https://api.crossref.org/works/{doi}"
     response = requests.get(url)
@@ -185,7 +189,7 @@ def get_metadata_from_crossref(doi):
         return None
 
 
-def get_metadata_from_google_scholar(pdf_path: pathlib.Path):
+def get_metadata_from_google_scholar(pdf_path: pathlib.Path) -> tuple[str, str, str, str]:
     # If no information, try to extract some additional part
     bibtex = extract_pdf_metadata(
         str(pdf_path.resolve()), search_doi=False, search_fulltext=True, scholar=False, minwords=200, max_query_words=200
@@ -220,8 +224,10 @@ def main():
     input_pdf = pathlib.Path(args.input_pdf)
     output_dir = input_pdf.parent
 
-    doi = extract_doi_from_pdf(input_pdf)
     year, first_initial, last_name, title = (None, None, None, None)
+    doi = args.doi
+    if doi is None:
+        doi = extract_doi_from_pdf(input_pdf)
     if doi is not None:
         logger.debug(f"We found a doi: {doi}, let's try crossref")
         metadata = get_metadata_from_crossref(doi)
