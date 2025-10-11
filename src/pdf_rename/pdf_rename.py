@@ -192,7 +192,12 @@ def get_metadata_from_crossref(doi) -> tuple[str, str, str, str] | None:
 def get_metadata_from_google_scholar(pdf_path: pathlib.Path) -> tuple[str, str, str, str]:
     # If no information, try to extract some additional part
     bibtex = extract_pdf_metadata(
-        str(pdf_path.resolve()), search_doi=False, search_fulltext=True, scholar=False, minwords=200, max_query_words=200
+        str(pdf_path.resolve()),
+        search_doi=False,
+        search_fulltext=True,
+        scholar=False,
+        minwords=200,
+        max_query_words=200,
     )
 
     bib = bibtexparser.loads(bibtex)
@@ -211,6 +216,7 @@ def get_metadata_from_google_scholar(pdf_path: pathlib.Path) -> tuple[str, str, 
         raise Exception('%s doesn\'t have proper author: "%s"' % (pdf_path, str(fam_names)))
 
     return entry["year"], fir_names[0][0].capitalize(), fam_names[0].capitalize(), entry["title"]
+
 
 ###############################################################################
 #  Entry point
@@ -251,6 +257,7 @@ def main():
 
     shutil.move(input_pdf, output_dir / final_name)
     logger.info(f"{input_pdf} renamed to {output_dir}/{final_name}")
+
 
 ###############################################################################
 #  Envelopping
