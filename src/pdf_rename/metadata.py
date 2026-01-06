@@ -11,7 +11,7 @@ from papers.encoding import standard_name, family_names
 import pymupdf
 import bibtexparser
 
-DOI_REGEXP = r"10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+"
+DOI_REGEXP = r"10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+[A-Za-z0-9]"
 
 
 def first_names(author: str) -> list[str]:
@@ -21,7 +21,9 @@ def first_names(author: str) -> list[str]:
 
 
 def fix_title(title: str) -> str:
-    return title.replace(": ", " - ")
+    title = title.replace(": ", " - ")
+    title = title.replace("/", "_")
+    return re.sub(r'[\'"‘’]', "", title)
 
 
 class Metadata:
@@ -55,7 +57,12 @@ class Metadata:
 
 class MetadataExtractor:
     def __init__(
-            self, pdf_path: pathlib.Path, arxiv_id: str | None = None, doi: str | None = None, title: str | None = None, disable_text_search: bool=False
+        self,
+        pdf_path: pathlib.Path,
+        arxiv_id: str | None = None,
+        doi: str | None = None,
+        title: str | None = None,
+        disable_text_search: bool = False,
     ):
         self._logger = logging.getLogger(self.__class__.__name__)
         self._pdf_path: pathlib.Path = pdf_path
@@ -98,7 +105,7 @@ class MetadataExtractor:
                 self._logger.debug(f"google scholar do provide some bibtex_str: {bibtex_str}")
 
         if bibtex_str is None:
-            raise Exception(f"Could not find any metadata for \"{self._pdf_path}\"")
+            raise Exception(f'Could not find any metadata for "{self._pdf_path}"')
 
         return Metadata(bibtex_str)
 
@@ -116,8 +123,9 @@ class MetadataExtractor:
 
         # Otherwise, extract text and search for DOI
         first_page_text = doc[0].get_text("text")
-        doi_match = re.search(DOI_REGEXP, first_page_text, re.IGNORECASE)
-        if doi_match:
-            return doi_match.group(0)
+        self._logger.debug(f"First page text:\n{first_page_text}")
+        doi_match = re.findall(DOI_REGEXP, first_page_text)
+        if len(doi_match) > 0:
+            return doi_match[0]
 
         return None
