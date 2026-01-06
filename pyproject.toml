@@ -23,7 +23,7 @@ classifiers = [
   'Programming Language :: Python :: 3.10',
 ]
 dependencies=[
-   "papers-cli==2.4",
+   "papers-cli>=2.12",
    "pymupdf"
 ]
 
@@ -36,7 +36,7 @@ dev = [
 ]
 
 [project.scripts]
-pdf_rename="pdf_rename.pdf_rename:main"
+pdf_rename="pdf_rename.__main__:main"
 
 [tool.black]
 line-length = 120
