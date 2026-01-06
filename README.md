@@ -4,11 +4,10 @@ Rename files to be more homogeneous using the meta-data or the google scholar in
 
 ## Installation
 
-Just install and activate the conda environment:
+Clone the current repository and run pip:
 
 ```sh
-conda env create -f environment.yaml
-conda activate pdf-rename
+pip install -e .
 ```
 
 ## Run
@@ -16,21 +15,22 @@ conda activate pdf-rename
 The command is the following:
 
 ```sh
-usage: pdf-rename.py [-h] [-f FAILED_DIR] [-l LOG_FILE] [-r] [-v]
-                     input output_dir
+usage: pdf_rename [-h] [-l LOG_FILE] [-v] [-a ARXIV_ID] [-d DOI] [-n] [-N] [-t TITLE] input_pdf
 
 positional arguments:
-  input                 pdf file or directory containing the pdf files to be
-                        renamed
-  output_dir            Output directory which will contain the renamed files
+  input_pdf             The input PDF file to rename
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  -f FAILED_DIR, --failed-dir FAILED_DIR
-                        Directory to store all the files which have been
-                        failed to be renamed
   -l LOG_FILE, --log_file LOG_FILE
                         Logger file
-  -r, --recursive       recursive list all pdf!
   -v, --verbosity       increase output verbosity
+  -a ARXIV_ID, --arxiv-id ARXIV_ID
+                        Assume the paper is an arxiv preprint, extract and then override the DOI using the
+                        ID
+  -d DOI, --doi DOI     Override the DOI (this override has priority over any other ones)
+  -n, --dry-run         Activate the dry run mode
+  -N, --no-text-search  Prevent to search using the full text
+  -t TITLE, --title TITLE
+                        Override the title
 ```
